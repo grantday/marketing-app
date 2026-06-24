@@ -248,7 +248,7 @@ After Month 3, reassess: if internal adoption is strong, continue Phase 4–5 be
 
 Update this file when a phase completes. Link PRs/commits to phase IDs (e.g. `feat(reach): 2.1 per-contact template variables`).
 
-**Current status:** Phase 1–7 complete — production-ready
+**Current status:** Phase 1–7 complete — deploy via [DigitalOcean](./deploy/DIGITALOCEAN.md) or [DEPLOY.md](./DEPLOY.md)
 
 ---
 

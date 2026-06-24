@@ -21,6 +21,8 @@ npm run dev                   # API :3002, web :5174
 
 See [DEPLOY.md](./DEPLOY.md) for Docker, nginx, HTTPS, and Meta webhooks.
 
+**DigitalOcean (recommended):** [deploy/DIGITALOCEAN.md](./deploy/DIGITALOCEAN.md) — Droplet + Managed PostgreSQL step-by-step.
+
 ## FastComet shared hosting (cPanel)
 
 **First deploy:** see [deploy/CPANEL-FASTCOMET.md](./deploy/CPANEL-FASTCOMET.md) — GitHub push alone does not deploy; use **Update from Remote** then **Deploy HEAD Commit** in cPanel.
