@@ -1,0 +1,29 @@
+# cPanel Git deployment — FastComet shared hosting
+# Docs: https://docs.cpanel.net/knowledge-base/web-services/guide-to-git-deployment/
+#
+# BEFORE FIRST DEPLOY: In cPanel → Git Version Control → your repo →
+#   click "Update from Remote" so the server matches GitHub (fixes uncommitted changes error).
+#
+# AFTER DEPLOY: cPanel → Setup Node.js App (Application Manager)
+#   - Application root: marketing-app/apps/api
+#   - Application startup file: dist/index.js
+#   - Node.js version: 20.x
+#   - Set env vars: DATABASE_URL, REDIS_URL, JWT_SECRET, TOKEN_ENCRYPTION_KEY, CLIENT_ORIGIN
+#
+# PostgreSQL: use remote DB (Neon/Supabase) — not available on shared hosting.
+# Redis: use Upstash free tier or similar — required for campaigns/workers.
+
+---
+deployment:
+  tasks:
+    - export REPOPATH=$(pwd)
+    - export DEPLOYPATH=/home/$USER/marketing-app
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/mkdir -p $DEPLOYPATH/tmp
+    - /bin/cp -R $REPOPATH/apps $DEPLOYPATH/
+    - /bin/cp -R $REPOPATH/packages $DEPLOYPATH/
+    - /bin/cp $REPOPATH/package.json $DEPLOYPATH/
+    - /bin/cp $REPOPATH/package-lock.json $DEPLOYPATH/
+    - cd $DEPLOYPATH && /usr/local/bin/npm ci 2>/dev/null || npm ci
+    - cd $DEPLOYPATH && /usr/local/bin/npm run build 2>/dev/null || npm run build
+    - /bin/touch $DEPLOYPATH/tmp/restart.txt
