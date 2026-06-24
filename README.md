@@ -1,4 +1,4 @@
-# Reach
+# Reach (marketing-app)
 
 WhatsApp marketing platform — campaigns, shared inbox, automation, CRM sync, and SaaS billing.
 
@@ -24,8 +24,8 @@ See [DEPLOY.md](./DEPLOY.md) for Docker, nginx, HTTPS, and Meta webhooks.
 ## Server setup (after cloning from GitHub)
 
 ```bash
-git clone https://github.com/YOUR_USER/reach.git
-cd reach
+git clone https://github.com/grantday/marketing-app.git
+cd marketing-app
 cp deploy/env.production.example .env.production
 # Edit .env.production — set DATABASE_URL, CLIENT_ORIGIN, secrets
 bash deploy/scripts/deploy-docker.sh
