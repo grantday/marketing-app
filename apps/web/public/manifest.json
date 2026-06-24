@@ -1,0 +1,17 @@
+{
+  "name": "Reach Agent",
+  "short_name": "Reach",
+  "description": "WhatsApp marketing and shared inbox for sales teams",
+  "start_url": "/inbox",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

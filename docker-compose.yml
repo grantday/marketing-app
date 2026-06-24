@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: reach
+      POSTGRES_PASSWORD: reach_dev
+      POSTGRES_DB: reach
+    ports:
+      - "5433:5432"
+    volumes:
+      - reach_pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - reach_redis_data:/data
+
+volumes:
+  reach_pg_data:
+  reach_redis_data:

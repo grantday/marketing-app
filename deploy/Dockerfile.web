@@ -1,0 +1,13 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package.json package-lock.json* ./
+COPY packages/shared ./packages/shared
+COPY apps/web ./apps/web
+RUN npm ci -w @reach/shared -w @reach/web 2>/dev/null || npm install -w @reach/shared -w @reach/web
+RUN npm run build -w @reach/shared && npm run build -w @reach/web
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx/reach.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1/ || exit 1

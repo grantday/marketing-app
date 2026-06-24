@@ -1,0 +1,23 @@
+{
+  "name": "reach",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @reach/api\" \"npm run dev -w @reach/web\"",
+    "dev:api": "npm run dev -w @reach/api",
+    "dev:web": "npm run dev -w @reach/web",
+    "build": "npm run build -w @reach/shared && npm run build -w @reach/api && npm run build -w @reach/web",
+    "start:api": "npm run start -w @reach/api",
+    "db:push": "npm run db:push -w @reach/api",
+    "db:seed": "npm run db:seed -w @reach/api",
+    "db:studio": "npm run db:studio -w @reach/api",
+    "deploy:docker": "docker compose -f deploy/docker-compose.prod.yml --env-file .env.production up -d --build",
+    "deploy:migrate": "cd apps/api && npx prisma db push"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

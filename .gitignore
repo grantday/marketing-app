@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.production
+.env.local
+*.db
+.DS_Store
+coverage/
+logs/
+backups/
+*.log
+.cursor/

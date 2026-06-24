@@ -1,0 +1,505 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  strictOptIn  Boolean  @default(true)
+  businessHoursJson String @default("{}")
+  autoAssignEnabled Boolean @default(false)
+  assignRoundRobinIndex Int @default(0)
+  outsideHoursMessage String?
+  crmApiUrl    String?
+  emailProviderJson String @default("{}")
+  smsProviderJson   String @default("{}")
+  emailFromAddress  String?
+  aiEnabled         Boolean  @default(false)
+  aiConfigJson      String   @default("{}")
+  slaFirstResponseMinutes Int @default(60)
+  slaResolutionMinutes    Int @default(1440)
+  messageRetentionDays    Int @default(365)
+  csatEnabled       Boolean  @default(false)
+  csatPrompt        String?
+  routingConfigJson String   @default("{}")
+  // SaaS / billing (Phase 6)
+  plan                  String   @default("trial")
+  stripeCustomerId      String?  @unique
+  stripeSubscriptionId  String?
+  subscriptionStatus    String   @default("trialing")
+  trialEndsAt           DateTime?
+  billingEmail          String?
+  contactLimit          Int      @default(500)
+  messageLimit          Int      @default(2000)
+  messagesUsedPeriod    Int      @default(0)
+  billingPeriodStart    DateTime?
+  onboardingStep        Int      @default(0)
+  onboardingDoneAt      DateTime?
+  customDomain          String?  @unique
+  subdomain             String?  @unique
+  whiteLabelJson        String   @default("{}")
+  resellerParentId      String?
+  resellerParent        Organization?  @relation("ResellerOrgs", fields: [resellerParentId], references: [id])
+  resellerChildren      Organization[] @relation("ResellerOrgs")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users            User[]
+  contacts         Contact[]
+  contactLists     ContactList[]
+  messageTemplates MessageTemplate[]
+  campaigns        Campaign[]
+  conversations    Conversation[]
+  whatsAppAccounts WhatsAppAccount[]
+  auditLogs        AuditLog[]
+  workflows        Workflow[]
+  cannedReplies    CannedReply[]
+  chatbotRules     ChatbotRule[]
+  apiKeys          ApiKey[]
+  outboundWebhooks OutboundWebhook[]
+  contactActivities ContactActivity[]
+  knowledgeArticles KnowledgeArticle[]
+  trackedLinks     TrackedLink[]
+  complaintLogs    ComplaintLog[]
+  aiInteractions   AiInteraction[]
+}
+
+model User {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  email          String   @unique
+  passwordHash   String
+  fullName       String
+  role           String   @default("Agent")
+  active         Boolean  @default(true)
+  skillsJson     String   @default("[]")
+  languagesJson  String   @default("[\"en\"]")
+  emailVerified      Boolean  @default(false)
+  emailVerifyToken   String?
+  emailVerifyExpires DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assignedConversations Conversation[] @relation("AssignedAgent")
+  auditLogs             AuditLog[]
+}
+
+model WhatsAppAccount {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  label           String   @default("Primary")
+  isPrimary       Boolean  @default(true)
+  accessTokenEnc  String
+  phoneNumberId   String
+  wabaId          String
+  displayPhone    String?
+  webhookVerified Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, phoneNumberId])
+  @@index([organizationId, isPrimary])
+}
+
+model Contact {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  phoneE164      String
+  email          String?
+  name           String?
+  tags           String   @default("[]")
+  optInStatus    String   @default("Unknown")
+  consentedAt    DateTime?
+  source         String?
+  customFields   String   @default("{}")
+  crmLeadId      String?
+  mergedIntoId   String?
+  engagementScore Int     @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  listMembers        ContactListMember[]
+  campaignRecipients CampaignRecipient[]
+  conversations      Conversation[]
+  workflowEnrollments  WorkflowEnrollment[]
+  activities         ContactActivity[]
+
+  @@unique([organizationId, phoneE164])
+  @@index([organizationId, optInStatus])
+  @@index([organizationId, engagementScore])
+}
+
+model ContactList {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  description    String?
+  filterTags     String   @default("[]")
+  segmentRulesJson String @default("{}")
+  optInOnly      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  members   ContactListMember[]
+  campaigns Campaign[]
+}
+
+model ContactListMember {
+  id        String      @id @default(uuid())
+  listId    String
+  list      ContactList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  addedAt   DateTime    @default(now())
+
+  @@unique([listId, contactId])
+}
+
+model MessageTemplate {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  metaName       String
+  language       String   @default("en")
+  category       String?
+  bodyPreview    String
+  componentsJson String   @default("[]")
+  status         String   @default("Pending")
+  variableCount  Int      @default(0)
+  syncedAt       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  campaigns Campaign[]
+
+  @@unique([organizationId, metaName, language])
+}
+
+model Campaign {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  name            String
+  templateId      String
+  template        MessageTemplate @relation(fields: [templateId], references: [id])
+  listId          String
+  list            ContactList @relation(fields: [listId], references: [id])
+  status          String   @default("Draft")
+  variableMapping String   @default("{}")
+  channelStrategy String @default("{}")
+  abTestJson      String @default("{}")
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  recipients CampaignRecipient[]
+
+  @@index([organizationId, status])
+}
+
+model CampaignRecipient {
+  id         String   @id @default(uuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  status     String   @default("Queued")
+  wamid      String?
+  errorCode  String?
+  errorMessage String?
+  sentAt     DateTime?
+  deliveredAt DateTime?
+  readAt     DateTime?
+  emailSentAt DateTime?
+  smsSentAt   DateTime?
+  fallbackChannel String?
+  variantLabel    String?
+  repliedAt       DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+}
+
+model Conversation {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  contactId      String
+  contact        Contact  @relation(fields: [contactId], references: [id])
+  assignedUserId String?
+  assignedUser   User?    @relation("AssignedAgent", fields: [assignedUserId], references: [id])
+  lastMessageAt  DateTime @default(now())
+  unreadCount    Int      @default(0)
+  sessionOpenUntil DateTime?
+  chatbotState     String   @default("{}")
+  referralSource   String?
+  ctwaClid         String?
+  channel          String   @default("whatsapp")
+  priority         String   @default("normal")
+  language         String   @default("en")
+  queueName        String?
+  firstResponseAt  DateTime?
+  firstResponseByUserId String?
+  resolvedAt       DateTime?
+  csatScore        Int?
+  csatComment      String?
+  slaBreached      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  messages Message[]
+  notes    ConversationNote[]
+
+  @@unique([organizationId, contactId])
+  @@index([organizationId, lastMessageAt])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction      String
+  type           String   @default("text")
+  body           String
+  mediaUrl       String?
+  wamid          String?  @unique
+  status         String   @default("Sent")
+  sentByUserId   String?
+  createdAt      DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  action         String
+  entityType     String?
+  entityId       String?
+  details        String   @default("{}")
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+model WebhookEvent {
+  id        String   @id @default(uuid())
+  payload   String
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Workflow {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  description    String?
+  triggerType    String
+  triggerConfig  String   @default("{}")
+  stepsJson      String   @default("[]")
+  active         Boolean  @default(true)
+  isTemplate     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  enrollments WorkflowEnrollment[]
+
+  @@index([organizationId, active])
+}
+
+model WorkflowEnrollment {
+  id               String   @id @default(uuid())
+  workflowId       String
+  workflow         Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  contactId        String
+  contact          Contact  @relation(fields: [contactId], references: [id])
+  status           String   @default("Active")
+  currentStepIndex Int      @default(0)
+  stepState        String   @default("{}")
+  nextRunAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([workflowId, contactId])
+  @@index([status, nextRunAt])
+}
+
+model CannedReply {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  body           String
+  shortcut       String?
+  createdAt      DateTime @default(now())
+}
+
+model ChatbotRule {
+  id              String   @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  name            String
+  keyword         String
+  matchType       String   @default("contains")
+  responseBody    String
+  menuOptionsJson String   @default("[]")
+  priority        Int      @default(0)
+  handoffAfter    Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model ConversationNote {
+  id             String   @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  body           String
+  createdAt      DateTime @default(now())
+}
+
+model ContactActivity {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  contactId      String
+  contact        Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel        String
+  direction      String
+  body           String
+  metadata       String   @default("{}")
+  relatedId      String?
+  createdAt      DateTime @default(now())
+
+  @@index([contactId, createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model ApiKey {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  keyPrefix      String
+  keyHash        String
+  scopes         String   @default("[\"read\",\"write\"]")
+  active         Boolean  @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, active])
+}
+
+model OutboundWebhook {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  url            String
+  events         String   @default("[]")
+  secret         String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([organizationId, active])
+}
+
+model WebhookDelivery {
+  id         String   @id @default(uuid())
+  webhookId  String
+  webhook    OutboundWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event      String
+  payload    String
+  statusCode Int?
+  success    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([webhookId, createdAt])
+}
+
+model KnowledgeArticle {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  content        String
+  tags           String   @default("[]")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, active])
+}
+
+model TrackedLink {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  code           String   @unique
+  destinationUrl String
+  title          String?
+  clickCount     Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  clicks LinkClick[]
+
+  @@index([organizationId])
+}
+
+model LinkClick {
+  id            String   @id @default(uuid())
+  trackedLinkId String
+  trackedLink   TrackedLink @relation(fields: [trackedLinkId], references: [id], onDelete: Cascade)
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([trackedLinkId, createdAt])
+}
+
+model ComplaintLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  contactId      String?
+  message        String
+  source         String   @default("manual")
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
+
+model AiInteraction {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  conversationId String?
+  type           String
+  resolved       Boolean  @default(false)
+  escalated      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, type, createdAt])
+}

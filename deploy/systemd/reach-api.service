@@ -1,0 +1,26 @@
+[Unit]
+Description=Reach WhatsApp Marketing API
+After=network.target postgresql.service redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=reach
+Group=reach
+WorkingDirectory=/opt/reach/apps/api
+EnvironmentFile=/opt/reach/.env.production
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/reach/api.log
+StandardError=append:/var/log/reach/api-error.log
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/reach /var/log/reach
+
+[Install]
+WantedBy=multi-user.target
