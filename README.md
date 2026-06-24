@@ -21,7 +21,10 @@ npm run dev                   # API :3002, web :5174
 
 See [DEPLOY.md](./DEPLOY.md) for Docker, nginx, HTTPS, and Meta webhooks.
 
-**DigitalOcean (recommended):** [deploy/DIGITALOCEAN.md](./deploy/DIGITALOCEAN.md) — Droplet + Managed PostgreSQL step-by-step.
+**DigitalOcean (recommended):**
+
+- Quick overview: [deploy/DIGITALOCEAN.md](./deploy/DIGITALOCEAN.md)
+- **Click-by-click walkthrough:** [deploy/DIGITALOCEAN-WALKTHROUGH.md](./deploy/DIGITALOCEAN-WALKTHROUGH.md)
 
 ## FastComet shared hosting (cPanel)
 
