@@ -23,15 +23,9 @@ See [DEPLOY.md](./DEPLOY.md) for Docker, nginx, HTTPS, and Meta webhooks.
 
 ## FastComet shared hosting (cPanel)
 
-Requires `.cpanel.yml` in repo root (included). In cPanel:
+**First deploy:** see [deploy/CPANEL-FASTCOMET.md](./deploy/CPANEL-FASTCOMET.md) — GitHub push alone does not deploy; use **Update from Remote** then **Deploy HEAD Commit** in cPanel.
 
-1. **Git Version Control** → clone `https://github.com/grantday/marketing-app.git`
-2. Click **Update from Remote** (fixes “uncommitted changes” error)
-3. Click **Deploy HEAD Commit**
-4. **Setup Node.js App** → root `marketing-app/apps/api`, startup `dist/index.js`, Node 20
-5. Set `DATABASE_URL` (Neon/Supabase) and `REDIS_URL` (Upstash) in app environment variables
-
-See comments in `.cpanel.yml` for details.
+Requires `.cpanel.yml` in repo root (included).
 
 ## Server setup (VPS / Docker)
 
